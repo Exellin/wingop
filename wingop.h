@@ -15,6 +15,7 @@
 #define CF 0.006297 //Skin friction coeff
 #define MU .00001796
 #define AC .256
+#define MAXALPHA 25
 
 extern double V;
 extern double A1;

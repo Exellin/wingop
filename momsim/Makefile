@@ -1,10 +1,10 @@
 CC=gcc 
 CFLAGS=-c -g -Wall
 LDFLAGS=-lm
-SRC=momsim.c
+SRC=momsim.c ../lift.c ../drag.c
 OBJ=$(SRC:.c=.o)
 EXE=momsim
-HEADS=
+HEADS=../wingop.h
 
 all: $(SRC) $(EXE)
 
