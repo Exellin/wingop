@@ -120,7 +120,7 @@ int main(int argc, char** argv)
 										B2 = b2;
 										D = d;
 										Z = z;
-										printf("Highest takeoff weight: %g. a1: %g, a2: %g, c1: %g, c2: %g, b1: %g, b2: %g, d: %g, z: %g\n", maxm, A1, A2, C1, C2, B1, B2, D, Z);
+										printf("\nHighest takeoff weight: %g. a1: %g, a2: %g, c1: %g, c2: %g, b1: %g, b2: %g, d: %g, z: %g\n", maxm, A1, A2, C1, C2, B1, B2, D, Z);
 									}
 								}
 							}
