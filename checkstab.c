@@ -26,7 +26,7 @@ char checkstab(double a1, double a2, double c1, double c2, double b1, double b2,
 		{
 			return -1;
 		}
-		if(m < minmon)
+		if(fabs(m) < fabs(minmon))
 		{
 			minmon = m;
 			stabalpha = alpha;
@@ -36,7 +36,6 @@ char checkstab(double a1, double a2, double c1, double c2, double b1, double b2,
 	{
 		return 0;
 	}
-	printf("Not stable at 0 degrees, stable at %i\n", stabalpha);
 	return -1; 
 }
 

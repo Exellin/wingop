@@ -14,6 +14,8 @@
 #define MINDEM 3.9
 #define MINZ 0
 #define MAXZ .3
+#define MAXDIFF .2
+
 
 double A1 = 0;
 double A2 = 0;
@@ -48,6 +50,12 @@ int main(int argc, char** argv)
 			double bigspan = b1;
 			for(b2 = MINB; b2 <= MAXB; b2 += inc)
 			{
+				if(fabs(b2-b1) > MAXDIFF)
+				{
+					
+					config++;
+					continue;
+				}
 				if(b2 > b1)
 				{
 					bigspan = b2;
