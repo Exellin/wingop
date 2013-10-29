@@ -54,7 +54,9 @@ double integ = 0;
 #define B 1
 #define D .6
 #define Z .2
-#define W 7
+#define W 7.0
+
+double pid(double, double, double, double, double, double);
 
 double linthrust(double v)
 {
@@ -64,7 +66,7 @@ double linthrust(double v)
 	}
 	else if(v > 9)
 	{
-		return -1;
+		return 0;
 	}
 	else if(round(v) == v)
 	{
@@ -96,15 +98,39 @@ double clarkl(double a, double f)
 	}
 	else if((round(a) == a) && (round(f) == f))
 	{
-		f = round((f+25)/5);
+		f = round((-f+25)/5);
 		return l[(int) f][(int) a];
 	}
-	else
+	else if((round(a) == a) && !(round(f) == f))
 	{
-		f = (f+25)/5;
+		f = ((-f+25)/5);
+		if(f == 0)
+		{
+			f = .0001;
+		}
+		printf("f: %g\n", f);
+		return l[(int)(floor(f))][(int) a] + (l[(int)(ceil(f))][(int) a] - l[(int)(floor(f))][(int) a])*((f-floor(f))/(ceil(f)-floor(f)));
+	}
+	else if(!(round(a) == a) && (round(f) == f))
+	{
+		f = round((-f+25)/5);
 		if(a == 0)
 		{
 			a = .0001;
+		}
+		return l[(int) f][(int)(floor(a))] + (l[(int) f][(int)(ceil(a))] - l[(int) f][(int)(floor(a))])*((a-floor(a))/(ceil(a)-floor(a)));
+	}
+	else
+	{
+		f = (-f+25)/5;
+		printf("f: %g\n", f);
+		if(a == 0)
+		{
+			a = .0001;
+		}
+		if(f == 0)
+		{
+			f = .0001;
 		}
 		return (1/( (ceil(a) - floor(a)) * (ceil(f) - floor(f)) )) * ( (l[(int) floor(f)][(int) floor(a)]*(ceil(a) - a)*(ceil(f) - f)) + (l[(int) ceil(f)][(int) floor(a)]*(a - floor(a))*(ceil(f) - f)) + (l[(int) floor(f)][(int) ceil(a)]*(ceil(a) - a)*(f - floor(f))) + (l[(int) ceil(a)][(int) ceil(f)]*(a - floor(a))*(f - floor(f))) );
 	}
@@ -130,16 +156,37 @@ double clarkd(double a, double f)
         }
         else if((round(a) == a) && (round(f) == f))
         {
-                f = round((f+25)/5);
+                f = round((-f+25)/5);
 		return d[(int) f][(int) a];
         }
-
-        else
-        {
-		f = (f+25)/5;
+	 else if((round(a) == a) && !(round(f) == f))
+ 	{
+		f = ((-f+25)/5);
+		if(f == 0)
+		{
+			f = .0001;
+		}
+		return d[(int)(floor(f))][(int) a] + (d[(int)(ceil(f))][(int) a] - d[(int)(floor(f))][(int) a])*((f-floor(f))/(ceil(f)-floor(f)));
+ 	}
+ 	else if(!(round(a) == a) && (round(f) == f))
+ 	{
+        	f = round((-f+25)/5);
 		if(a == 0)
 		{
 			a = .0001;
+		}
+		return d[(int) f][(int)(floor(a))] + (d[(int) f][(int)(ceil(a))] - d[(int) f][(int)(floor(a))])*((a-floor(a))/(ceil(a)-floor(a)));
+ 	}
+        else
+        {
+		f = (-f+25)/5;
+		if(a == 0)
+		{
+			a = .0001;
+		}
+		if(f == 0)
+		{
+			f = .0001;
 		}
 		return (1/( (ceil(a) - floor(a)) * (ceil(f) - floor(f)) )) * ( (d[(int) floor(f)][(int) floor(a)]*(ceil(a) - a)*(ceil(f) - f)) + (d[(int) ceil(f)][(int) floor(a)]*(a - floor(a))*(ceil(f) - f)) + (d[(int) floor(f)][(int) ceil(a)]*(ceil(a) - a)*(f - floor(f))) + (d[(int) ceil(a)][(int) ceil(f)]*(a - floor(a))*(f - floor(f))) );
 	}
@@ -165,16 +212,37 @@ double clarkm(double a, double f)
         }
         else if((round(a) == a) && (round(f) == f))
         {
-		f = round((f+25)/5);
+		f = round((-f+25)/5);
 		return m[(int) f][(int) a];
         }
-
-        else
-        {
-		f = (f+25)/5;
+	else if((round(a) == a) && !(round(f) == f))
+ 	{
+		f = ((-f+25)/5);
+		if(f == 0)
+		{
+			f = .0001;
+		}
+		return m[(int)(floor(f))][(int) a] + (m[(int)(ceil(f))][(int) a] - m[(int)(floor(f))][(int) a])*((f-floor(f))/(ceil(f)-floor(f)));
+ 	}
+ 	else if(!(round(a) == a) && (round(f) == f))
+ 	{
+		f = round((-f+25)/5);
 		if(a == 0)
 		{
 			a = .0001;
+		}
+        	return m[(int) f][(int)(floor(a))] + (m[(int) f][(int)(ceil(a))] - m[(int) f][(int)(floor(a))])*((a-floor(a))/(ceil(a)-floor(a)));
+ 	}
+        else
+        {
+		f = (-f+25)/5;
+		if(a == 0)
+		{
+			a = .0001;
+		}
+		if(f == 0)
+		{
+			f = .0001;
 		}
                 return (1/( (ceil(a) - floor(a)) * (ceil(f) - floor(f)) )) * ( (m[(int) floor(f)][(int) floor(a)]*(ceil(a) - a)*(ceil(f) - f)) + (m[(int) ceil(f)][(int) floor(a)]*(a - floor(a))*(ceil(f) - f)) + (m[(int) floor(f)][(int) ceil(a)]*(ceil(a) - a)*(f - floor(f))) + (m[(int) ceil(a)][(int) ceil(f)]*(a - floor(a))*(f - floor(f))) );
         }
@@ -203,25 +271,54 @@ int main(int argc, char** argv)
 	}
 	
 	printf("Max Cl is %g at alpha %g.\n", maxcl, maxa);
-	for(alpha = 0; alpha < 20; alpha += .01)
+	//double flap;
+	double maxdist = 61;
+	double ts = .01;
+	double vn = 0;
+	double vn1 = ts;
+	double distn = 0;
+	double tod = -1;
+	double time = 0;
+	alpha = 0;
+	double deflec = 0;
+	double angv = 0;
+	double angv1 = ts;
+	while(1)
 	{
-		double flap;
-		for(flap = -MAXF; flap < MAXF; flap += .01)
+		printf("Alpha: %g, Deflec: %g\n", alpha, deflec);
+		vn = vn1;
+		angv = angv1;
+		double fclift = .5*RHO*pow(vn, 2)*clarkl(alpha, 0)*B*C;
+		puts("1");
+		double fcdrag = .5*RHO*pow(vn, 2)*clarkd(alpha, 0)*B*C;
+		puts("2");
+		double rclift = .5*RHO*pow(vn, 2)*clarkl(alpha, deflec)*B*C;
+		puts("3");
+		double rcdrag = .5*RHO*pow(vn, 2)*clarkd(alpha, deflec)*B*C;
+		puts("4");
+		if((2*fclift + 2*rclift) > W*G)
 		{
-			if(isnan(clarkl(alpha, flap)))
-			{
-				printf("l: Alpha: %g, flap: %g\n", alpha, flap);
-			}
-			if(isnan(clarkd(alpha, flap)))
-                        {
-                                printf("d: Alpha: %g, flap: %g\n", alpha, flap);
-                        }
-			if(isnan(clarkm(alpha, flap)))
-                        {
-                                printf("m: Alpha: %g, flap: %g\n", alpha, flap);
-                        }
-
+			printf("Takeoff!\n");
+			break;
 		}
+		vn1 = ((linthrust(vn) - (2*fcdrag+2*rcdrag))/W)*ts + vn;
+		puts("5");
+		distn = distn + .5*ts*(vn1 + vn);
+		time += ts;
+		if(distn > maxdist)
+		{
+			printf("No takeoff.\n");
+			break;
+		}
+		deflec = pid(2, 1, 2, maxa, alpha, ts);
+		puts("6");
+		double fcmom = 2*C*C*B*clarkm(alpha, 0) + 2*fclift*D*.5;
+		printf("deflec: %g\n", deflec);
+		double rcmom = 2*C*C*B*clarkm(alpha, deflec) + -2*rclift*D*.5;
+		puts("8");
+		angv1 = ((fcmom + rcmom)/W)*ts + angv;
+		alpha = (alpha + .5*ts*(angv + angv1))*(180/M_PI);
+		printf("%gs: Lift: %g Drag: %g Thrust: %g Speed: %g Distance: %g Alpha: %g Deflection:%g Moment: %g\n", time, (2*fclift + 2*rclift), (2*fcdrag + 2*rcdrag), linthrust(vn1), vn1, distn, alpha, deflec, (fcmom+rcmom));
 	}
 	return 0;
 }
