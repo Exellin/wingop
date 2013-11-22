@@ -277,7 +277,7 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 	double vn = 0; //Previous velocity
 	double vn1 = ts; //New velocity
 	double distn = 0; //Current distance
-	double tod = -1; //I think this is unused
+	double tod = -1; //take off distance
 	double time = 0; //Time taken
 	alpha = 0; //Reset AoA to zero
 	double deflec = 0; //Flap deflection
@@ -316,7 +316,7 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 		printf("deflec: %g\n", deflec);
 		double rcmom = 2*C*C*B*clarkm(alpha, deflec) + -2*rclift*D*.5; //Moment at the rear wing
 		puts("7");
-		angv1 = ((fcmom + rcmom)/W)*ts + angv; //Angular numerical velocity integral
+		angv1 = ((fcmom + rcmom)/W)*ts; //Angular numerical velocity integral
 		alpha = (alpha + .5*ts*(angv + angv1))*(180/M_PI); //Numerical anglar position integral
 		printf("%gs: Lift: %g Drag: %g Thrust: %g Speed: %g Distance: %g Alpha: %g Deflection:%g Moment: %g\n", time, (2*fclift + 2*rclift), (2*fcdrag + 2*rcdrag), linthrust(vn1), vn1, distn, alpha, deflec, (fcmom+rcmom));
 	}
