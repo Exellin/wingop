@@ -2,9 +2,9 @@
 
 #define MAXF 25
 
-double t[11] = {20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0};
-
-double l[11][21] = {
+double t[11] = {20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0}; //1 ms steps
+//Arrays are deflection first (from -25 upwards) in increments of 5 degrees, then angle of attack (from 0, in 1 degree increments)
+double l[11][21] = { //Lift coeffcient array
 {-0.734, -0.577, -0.469, -0.357, -0.246, -0.137, -0.028, 0.079, 0.182, 0.282, 0.381, 0.479, 0.555, 0.641, 0.724, 0.798, 0.864, 0.917, 0.952, 0.972, 0.976},
 {-0.51, -0.365, -0.254, -0.143, -0.032, 0.077, 0.184, 0.286, 0.384, 0.481, 0.577, 0.667, 0.733, 0.813, 0.886, 0.948, 0.998, 1.029, 1.044, 1.043, 1.027},
 {-0.278, -0.148, -0.036, 0.075, 0.184, 0.291, 0.393, 0.488, 0.582, 0.676, 0.767, 0.825, 0.904, 0.974, 1.033, 1.08, 1.106, 1.116, 1.11, 1.088, 1.054},
@@ -18,7 +18,7 @@ double l[11][21] = {
 {1.588, 1.682, 1.646, 1.881, 1.615, 1.665, 1.702, 1.723, 1.718, 1.691, 1.646, 1.584, 1.508, 1.423, 1.332, 1.238, 1.145, 1.055, 0.969, 0.889, 0.814}
 };
 
-double d[11][21] = {
+double d[11][21] = { //Drag coeffcient array
 {0.05812, 0.05704, 0.05402, 0.07103, 0.0977, 0.09922, 0.10246, 0.10523, 0.11106, 0.12023, 0.1294, 0.13936, 0.15268, 0.16967, 0.19053, 0.2146, 0.2412, 0.27033, 0.29946, 0.34745, 0.3902},
 {0.05476, 0.05467, 0.067, 0.08903, 0.08998, 0.09197, 0.0951, 0.10119, 0.10908, 0.11888, 0.12903, 0.13202, 0.1581, 0.17827, 0.20083, 0.22781, 0.25352, 0.29492, 0.32967, 0.39628, 0.46274},
 {0.05291, 0.05524, 0.08139, 0.0828, 0.08469, 0.08795, 0.09215, 0.10061, 0.11065, 0.12096, 0.12195, 0.14681, 0.1668, 0.19028, 0.21544, 0.24297, 0.27887, 0.3251, 0.37204, 0.43022, 0.50206},
@@ -32,7 +32,7 @@ double d[11][21] = {
 {0.101, 0.09853, 0.10748, 0.10419, 0.11774, 0.13731, 0.16269, 0.18536, 0.21414, 0.24933, 0.28992, 0.35874, 0.437, 0.5043, 0.63755, 0.70259, 0.7831, 0.91095, 1.07004, 1.20569, 1.43685}
 };
 
-double m[11][21] = {
+double m[11][21] = { //Moment coefficient array
 {0.061, 0.067, 0.072, 0.124, 0.121, 0.118, 0.115, 0.111, 0.104, 0.099, 0.095, 0.091, 0.071, 0.064, 0.06, 0.056, 0.051, 0.044, 0.038, 0.034, 0.03},
 {0.047, 0.05, 0.087, 0.084, 0.082, 0.079, 0.076, 0.072, 0.067, 0.063, 0.06, 0.056, 0.042, 0.038, 0.035, 0.032, 0.028, 0.022, 0.02, 0.018, 0.016},
 {0.028, 0.032, 0.046, 0.044, 0.042, 0.04, 0.038, 0.034, 0.031, 0.029, 0.027, 0.019, 0.017, 0.015, 0.013, 0.01, 0.008, 0.006, 0.005, 0.004, 0.003},
@@ -46,72 +46,72 @@ double m[11][21] = {
 {-0.278, -0.28, -0.254, -0.284, -0.16, -0.154, -0.149, -0.14, -0.123, -0.108, -0.099, -0.096, -0.094, -0.091, -0.089, -0.086, -0.086, -0.084, -0.082, -0.08, -0.079}
 };
 
-double preverr = 0;
-double integ = 0;
+double preverr = 0; //For the PID controller, previous error
+double integ = 0; //Current integral state for PID controller
+//UNIT SYSTEM IS KG M S
+#define C .1 //Chord
+#define RHO 1.225 //Air density
+#define B 1 //Span
+#define D .6 //Distance horizontally
+#define Z .2 //Distance vertically 
+#define W 7.0 //Mass of aeroplane 
 
-#define C .1
-#define RHO 1.225
-#define B 1
-#define D .6
-#define Z .2
-#define W 7.0
+double pid(double, double, double, double, double, double); //Forward declaration
 
-double pid(double, double, double, double, double, double);
-
-double linthrust(double v)
+double linthrust(double v) //Thrust output
 {
-	if(v < 0)
+	if(v < 0) //No backwards
 	{
 		return -1;
 	}
-	else if(v > 9)
+	else if(v > 9) //Thrust drops to zero at 9m/s
 	{
 		return 0;
 	}
-	else if(round(v) == v)
+	else if(round(v) == v) //If it's an integer
 	{
-		return t[(int) v];
+		return t[(int) v]; //Just cast it, no interpolation
 	}
-	else
+	else //If it's a double, linearly interpolate the thrust
 	{
 		return t[(int) floor(v)] + (t[(int) ceil(v)] - t[(int) floor(v)])*((v - floor(v))/(ceil(v) - floor(v)));
 	}
 }
 
-double clarkl(double a, double f)
+double clarkl(double a, double f) //Lift coefficient from the wing
 {
-	if(a < 0)
+	if(a < 0) //No negative angle of attack
  	{
  		return -1;
  	}
- 	else if(a > 20)
+ 	else if(a > 20) //Angle of attack cannot exceed 20
 	{
 		return -1;
 	}
-	else if(f <= -25)
+	else if(f <= -25) //Deflection cannot be lower than -24
 	{
 		return -1;
 	}
-	else if(f > 25)
+	else if(f > 25) //Deflection cannot exceed 25 degrees
 	{
 		return -1;
 	}
-	else if((round(a) == a) && (round(f) == f))
+	else if((round(a) == a) && (round(f) == f)) //If both are effectively integers
 	{
-		f = round((-f+25)/5);
-		return l[(int) f][(int) a];
+		f = round((-f+25)/5); //Divide the defection by 5
+		return l[(int) f][(int) a]; //Just return the values in the array
 	}
-	else if((round(a) == a) && !(round(f) == f))
+	else if((round(a) == a) && !(round(f) == f)) //If AoA is integer but deflection is a decimal
 	{
-		f = ((-f+25)/5);
-		if(f == 0)
+		f = ((-f+25)/5); //Convert f to correct index
+		if(f == 0) //f being zero sometimes explodes things
 		{
 			f = .0001;
 		}
-		printf("f: %g\n", f);
-		return l[(int)(floor(f))][(int) a] + (l[(int)(ceil(f))][(int) a] - l[(int)(floor(f))][(int) a])*((f-floor(f))/(ceil(f)-floor(f)));
+		printf("f: %g\n", f); //Debugging use
+		return l[(int)(floor(f))][(int) a] + (l[(int)(ceil(f))][(int) a] - l[(int)(floor(f))][(int) a])*((f-floor(f))/(ceil(f)-floor(f))); //Linear interpolation for a
 	}
-	else if(!(round(a) == a) && (round(f) == f))
+	else if(!(round(a) == a) && (round(f) == f)) //Same as above for a being a decimal
 	{
 		f = round((-f+25)/5);
 		if(a == 0)
@@ -120,11 +120,11 @@ double clarkl(double a, double f)
 		}
 		return l[(int) f][(int)(floor(a))] + (l[(int) f][(int)(ceil(a))] - l[(int) f][(int)(floor(a))])*((a-floor(a))/(ceil(a)-floor(a)));
 	}
-	else
+	else //If both are decimals (oh dear)
 	{
-		f = (-f+25)/5;
+		f = (-f+25)/5; //Convert f
 		printf("f: %g\n", f);
-		if(a == 0)
+		if(a == 0) //If either is zero, we get a division by zero.
 		{
 			a = .0001;
 		}
@@ -132,11 +132,11 @@ double clarkl(double a, double f)
 		{
 			f = .0001;
 		}
-		return (1/( (ceil(a) - floor(a)) * (ceil(f) - floor(f)) )) * ( (l[(int) floor(f)][(int) floor(a)]*(ceil(a) - a)*(ceil(f) - f)) + (l[(int) ceil(f)][(int) floor(a)]*(a - floor(a))*(ceil(f) - f)) + (l[(int) floor(f)][(int) ceil(a)]*(ceil(a) - a)*(f - floor(f))) + (l[(int) ceil(a)][(int) ceil(f)]*(a - floor(a))*(f - floor(f))) );
+		return (1/( (ceil(a) - floor(a)) * (ceil(f) - floor(f)) )) * ( (l[(int) floor(f)][(int) floor(a)]*(ceil(a) - a)*(ceil(f) - f)) + (l[(int) ceil(f)][(int) floor(a)]*(a - floor(a))*(ceil(f) - f)) + (l[(int) floor(f)][(int) ceil(a)]*(ceil(a) - a)*(f - floor(f))) + (l[(int) ceil(a)][(int) ceil(f)]*(a - floor(a))*(f - floor(f))) ); //Bilinear interpolation (ew)
 	}
 }
 
-double clarkd(double a, double f)
+double clarkd(double a, double f) //See clarkl. Drag coeff
 {
 	if(a < 0)
         {
@@ -192,7 +192,7 @@ double clarkd(double a, double f)
 	}
 }
 
-double clarkm(double a, double f)
+double clarkm(double a, double f) //See clarkl. Moment coeff
 {
         if(a < 0)
         {
@@ -250,12 +250,12 @@ double clarkm(double a, double f)
 
 
 
-int main(int argc, char** argv)
+int main(int argc, char** argv) //argc is argument count, argv is an array of space delimited argument strings
 {
-	double alpha = 0;
-	double maxa = 0;
-	double maxcl = 0;
-	while(1)
+	double alpha = 0; //Initial AoA
+	double maxa = 0; //Stall maxa
+	double maxcl = 0; //Stall Coeff lift
+	while(1) //Finds stall Cl
 	{
 		printf("Alpha: %g Cl: %g\n", alpha, clarkl(alpha, 0));
 		if(clarkl(alpha, 0) > maxcl)
@@ -272,68 +272,75 @@ int main(int argc, char** argv)
 	
 	printf("Max Cl is %g at alpha %g.\n", maxcl, maxa);
 	//double flap;
-	double maxdist = 61;
-	double ts = .01;
-	double vn = 0;
-	double vn1 = ts;
-	double distn = 0;
-	double tod = -1;
-	double time = 0;
-	alpha = 0;
-	double deflec = 0;
-	double angv = 0;
-	double angv1 = ts;
+	double maxdist = 61; //Runway length
+	double ts = .01; //Time step
+	double vn = 0; //Previous velocity
+	double vn1 = ts; //New velocity
+	double distn = 0; //Current distance
+	double tod = -1; //take off distance
+	double time = 0; //Time taken
+	alpha = 0; //Reset AoA to zero
+	double deflec = 0; //Flap deflection
+	double angv = 0; //Current angular velocity
+	double angv1 = ts; //New angular veolcity
 	while(1)
 	{
 		printf("Alpha: %g, Deflec: %g\n", alpha, deflec);
 		vn = vn1;
 		angv = angv1;
-		double fclift = .5*RHO*pow(vn, 2)*clarkl(alpha, 0)*B*C;
+		double fclift = .5*RHO*pow(vn, 2)*clarkl(alpha, 0)*B*C; //Calculating lift, front wing
 		puts("1");
 		double fcdrag = .5*RHO*pow(vn, 2)*clarkd(alpha, 0)*B*C;
 		puts("2");
-		double rclift = .5*RHO*pow(vn, 2)*clarkl(alpha, deflec)*B*C;
+		double rclift = .5*RHO*pow(vn, 2)*clarkl(alpha, deflec)*B*C; //Back wing
 		puts("3");
 		double rcdrag = .5*RHO*pow(vn, 2)*clarkd(alpha, deflec)*B*C;
 		puts("4");
-		if((2*fclift + 2*rclift) > W*G)
+		if((2*fclift + 2*rclift) > W*G) //See if it takes off
 		{
 			printf("Takeoff!\n");
 			break;
 		}
-		vn1 = ((linthrust(vn) - (2*fcdrag+2*rcdrag))/W)*ts + vn;
+		vn1 = ((linthrust(vn) - (2*fcdrag+2*rcdrag))/W)*ts + vn; //Numerical integral for speed
 		puts("5");
-		distn = distn + .5*ts*(vn1 + vn);
+		distn = distn + .5*ts*(vn1 + vn); //Numerical integral for distance
 		time += ts;
-		if(distn > maxdist)
+		if(distn > maxdist) //If we exceed runway length, fail
 		{
 			printf("No takeoff.\n");
 			break;
 		}
-		deflec = pid(2, 1, 2, maxa, alpha, ts);
+		deflec = pid(2, 1, 2, maxa, alpha, ts); //Put the current state into the PID controller and set the flap deflection
 		puts("6");
-		double fcmom = 2*C*C*B*clarkm(alpha, 0) + 2*fclift*D*.5;
+		double fcmom = 2*C*C*B*clarkm(alpha, 0) + 2*fclift*D*.5; //Moment at the front wing
 		printf("deflec: %g\n", deflec);
+<<<<<<< HEAD
 		double rcmom = 2*C*C*B*clarkm(alpha, deflec) + -2*rclift*D*.5;
 		puts("8");
 		printf("Front Moment: %g\nRear Moment: %g\n", fcmom, rcmom);
 		angv1 = ((fcmom + rcmom)/(W*(pow(Z,2)+pow((D+2*C),2))/3))*ts + angv;
 		printf("angv: %g\nangv1 %g\n", angv1, angv1); //testing change
 		alpha = (alpha + (180/M_PI)*.5*ts*(angv + angv1));
+=======
+		double rcmom = 2*C*C*B*clarkm(alpha, deflec) + -2*rclift*D*.5; //Moment at the rear wing
+		puts("7");
+		angv1 = (fcmom + rcmom)/((pow(Z,2)+pow((D+2C),2))/3)*ts+angv1; //Angular numerical velocity integral
+		alpha = (alpha + .5*ts*(angv + angv1))*(180/M_PI); //Numerical anglar position integral
+>>>>>>> 94eed2dd839d6846b0da1d88ccba0abfd171fe92
 		printf("%gs: Lift: %g Drag: %g Thrust: %g Speed: %g Distance: %g Alpha: %g Deflection:%g Moment: %g\n", time, (2*fclift + 2*rclift), (2*fcdrag + 2*rcdrag), linthrust(vn1), vn1, distn, alpha, deflec, (fcmom+rcmom));
 	}
 	return 0;
 }
 
-double pid(double kp, double ki, double kd, double sp, double mv, double ts)
+double pid(double kp, double ki, double kd, double sp, double mv, double ts) //PID controller for the plane
 {
-	double err = sp - mv;
-	integ = integ + err*ts;
-	double deriv = (err = preverr)/ts;
-	preverr = err;
+	double err = sp - mv; //Error from set point and measured value
+	integ = integ + err*ts; //Integral (numerical)
+	double deriv = (err - preverr)/ts; //Derivative (numerical)
+	preverr = err; 
 	if((kp*err + ki*integ + kd*deriv) >= MAXF)
 	{
-		return MAXF;
+		return MAXF; //Maximum deflection
 	}
 	else if((kp*err + ki*integ + kd*deriv) <=-MAXF)
 	{
@@ -341,6 +348,6 @@ double pid(double kp, double ki, double kd, double sp, double mv, double ts)
 	}
 	else
 	{
-		return (kp*err + ki*integ + kd*deriv);
+		return (kp*err + ki*integ + kd*deriv); //Return the PID
 	}
 }
