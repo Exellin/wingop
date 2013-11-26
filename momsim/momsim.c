@@ -317,9 +317,9 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 		double rcmom = 2*C*C*B*clarkm(alpha, deflec) + -2*rclift*D*.5; //Moment at the rear wing
 		puts("7");
 		printf("Front Moment: %g\nRear Moment: %g\n", fcmom, rcmom);
-		angv1 = ((fcmom + rcmom)/(W*(pow(Z,2)+pow((D+2*C),2))/3))*ts + angv;  //Angular numerical velocity integral
+		angv1 = (fcmom + rcmom)/((pow(Z,2)+pow((D+2*C),2))/3)*ts+angv1; //Angular numerical velocity integral
 		printf("angv: %g\nangv1 %g\n", angv, angv1);
-		alpha = (alpha + (180/M_PI)*.5*ts*(angv + angv1)); //Numerical angular position integral
+		alpha = (alpha + (180/M_PI)*0.5*ts*(angv + angv1)); //Numerical angular position integral
 		printf("%gs: Lift: %g Drag: %g Thrust: %g Speed: %g Distance: %g Alpha: %g Deflection:%g Moment: %g\n", time, (2*fclift + 2*rclift), (2*fcdrag + 2*rcdrag), linthrust(vn1), vn1, distn, alpha, deflec, (fcmom+rcmom));
 	}
 	return 0;
