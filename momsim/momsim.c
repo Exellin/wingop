@@ -318,7 +318,7 @@ int main(int argc, char** argv)
 		puts("8");
 		printf("Front Moment: %g\nRear Moment: %g\n", fcmom, rcmom);
 		angv1 = ((fcmom + rcmom)/(W*(pow(Z,2)+pow((D+2*C),2))/3))*ts + angv;
-		printf("angv: %g\nangv1 %g\n", angv1, angv1);
+		printf("angv: %g\nangv1 %g\n", angv1, angv1); //testing change
 		alpha = (alpha + (180/M_PI)*.5*ts*(angv + angv1));
 		printf("%gs: Lift: %g Drag: %g Thrust: %g Speed: %g Distance: %g Alpha: %g Deflection:%g Moment: %g\n", time, (2*fclift + 2*rclift), (2*fcdrag + 2*rcdrag), linthrust(vn1), vn1, distn, alpha, deflec, (fcmom+rcmom));
 	}
