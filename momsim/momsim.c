@@ -316,6 +316,7 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 		printf("deflec: %g\n", deflec);
 		double rcmom = 2*C*C*B*clarkm(alpha, deflec) + -2*rclift*D*.5; //Moment at the rear wing
 		puts("7");
+		printf("front wing moment coefficient: %g\nrear wing moment coefficient: %g\n", clarkm(alpha,0), clarkm(alpha, deflec));
 		printf("Front Moment: %g\nRear Moment: %g\n", fcmom, rcmom);
 		angv1 = (fcmom + rcmom)/((pow(Z,2)+pow((D+2*C),2))/3)*ts+angv1; //Angular numerical velocity integral
 		printf("angv: %g\nangv1 %g\n", angv, angv1);
