@@ -88,7 +88,7 @@ double clarkl(double a, double f) //Lift coefficient from the wing
 	{
 		return -1;
 	}
-	else if(f <= -25) //Deflection cannot be lower than -24
+	else if(f < -25) //Deflection cannot be lower than -25
 	{
 		return -1;
 	}
@@ -146,7 +146,7 @@ double clarkd(double a, double f) //See clarkl. Drag coeff
         {
                 return -1;
         }
-        else if(f <= -25)
+        else if(f < -25)
         {
                 return -1;
         }
@@ -202,7 +202,7 @@ double clarkm(double a, double f) //See clarkl. Moment coeff
         {
                 return -1;
         }
-        else if(f <= -25)
+        else if(f < -25)
         {
                 return -1;
         }
@@ -282,7 +282,7 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 	alpha = 0; //Reset AoA to zero
 	double deflec = 0; //Flap deflection
 	double angv = 0; //Current angular velocity
-	double angv1 = ts; //New angular veolcity
+	double angv1 = ts; //New angular velocity
 	while(1)
 	{
 		printf("Alpha: %g, Deflec: %g\n", alpha, deflec);
@@ -313,12 +313,11 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 		deflec = pid(2, 1, 2, maxa, alpha, ts); //Put the current state into the PID controller and set the flap deflection
 		puts("6");
 		double fcmom = 2*C*C*B*clarkm(alpha, 0) + 2*fclift*D*.5; //Moment at the front wing
-		printf("deflec: %g\n", deflec);
-		double rcmom = 2*C*C*B*clarkm(alpha, deflec) + -2*rclift*D*.5; //Moment at the rear wing
+		double rcmom = 0.25*2*C*C*B*clarkm(alpha, deflec) + 0.75*2*C*C*B*clarkm(alpha, 0) + -2*rclift*D*.5; //Moment at the rear wing
 		puts("7");
-		printf("front wing moment coefficient: %g\nrear wing moment coefficient: %g\n", clarkm(alpha,0), clarkm(alpha, deflec));
+		printf("front wing moment coefficient: %g\nrear wing moment coefficient: %g\n", clarkm(alpha,0), 0.25*clarkm(alpha, deflec)+0.75*clarkm(alpha,0));
 		printf("Front Moment: %g\nRear Moment: %g\n", fcmom, rcmom);
-		angv1 = (fcmom + rcmom)/((pow(Z,2)+pow((D+2*C),2))/3)*ts+angv1; //Angular numerical velocity integral
+		angv1 = (fcmom + rcmom)/((1/3)*(pow(Z,2)+pow((D+2*C),2)))*ts+angv; //Angular numerical velocity integral, Replace 1 with W
 		printf("angv: %g\nangv1 %g\n", angv, angv1);
 		alpha = (alpha + (180/M_PI)*0.5*ts*(angv + angv1)); //Numerical angular position integral
 		printf("%gs: Lift: %g Drag: %g Thrust: %g Speed: %g Distance: %g Alpha: %g Deflection:%g Moment: %g\n", time, (2*fclift + 2*rclift), (2*fcdrag + 2*rcdrag), linthrust(vn1), vn1, distn, alpha, deflec, (fcmom+rcmom));
