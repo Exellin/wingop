@@ -19,8 +19,10 @@ int Reincrement = 5000;
 char line[100];				//string to hold line of file
 double Cl;
 double Cd;
+double Cm;
 char Clstring[25] = "";
 char Cdstring[25] = "";
+char Cmstring[25] = "";
 int KeepLooping = 1;
 FILE *filepointer;
 
@@ -92,7 +94,30 @@ while(1 && KeepLooping)
 				i++;
 			}
 			sscanf(Cdstring, "%lf", &Cd);
-			printf("At an aoa of %f and a Reynolds number of %f, the Cl is %g and Cd is %g", aoa, Re, Cl, Cd);
+			
+			while (blanktest == ' ') //read Cm
+			{
+				blanktest = line[i];
+				i++;
+			}
+			while (blanktest != ' ')
+			{
+				blanktest=line[i];
+				i++;
+			}
+			while (blanktest == ' ') 
+			{
+				blanktest = line[i];
+				i++;
+			}
+			while (blanktest != ' ')
+			{
+				Cmstring[strlen(Cmstring)] = blanktest;
+				blanktest=line[i];
+				i++;
+			}
+			sscanf(Cmstring, "%lf", &Cm);
+			printf("At an aoa of %f and a Reynolds number of %f, the Cl is %g, Cd is %g, and Cm is %g", aoa, Re, Cl, Cd, Cm);
 		}
 	}
 	if (feof(filepointer)) //with 3 blank lines at end of file, aoastring is 25.000 3 times until the file ends.
