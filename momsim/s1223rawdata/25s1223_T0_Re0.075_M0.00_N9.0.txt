@@ -1,0 +1,14 @@
+XFLR5 v6.09.05 beta
+
+ Calculated polar for: 25s1223
+
+ 1 1 Reynolds number fixed          Mach number fixed         
+
+ xtrf =   1.000 (top)        1.000 (bottom)
+ Mach =   0.000     Re =     0.075 e 6     Ncrit =   9.000
+
+  alpha     CL        CD       CDp       Cm    Top Xtr Bot Xtr   Cpmin    Chinge    XCp    
+ ------- -------- --------- --------- -------- ------- ------- -------- --------- ---------
+   1.000   1.4678   0.07122   0.06447  -0.2357  0.5522  0.5408  -1.7332   0.0000   0.4031
+
+
