@@ -57,14 +57,14 @@ char Cmstring[25] = "";
 int KeepLooping = 1;
 FILE *filepointer;
 
-strcat(file_name, "./s1223rawdata/"); 					//1st part of filename
+strcat(file_name, "./s1223rawdata/"); 						//1st part of filename
 Re = floor(Re/Reincrement)*Reincrement; 					//rounding to nearest 5000, to a minimum of 5000
 if (Re < 5000)
 {
 Re = 5000;
 }
 alpha = round(alpha);										//rounding to nearest integer
-deflec = round(deflec);										//rounding to nearest integer
+deflec = floor(deflec/5)*deflec;							//rounding to nearest 5
 sprintf(deflecstring, "%d", (int) deflec);
 sprintf(Restring, "%lf", Re/1000000); 						//converting to string
 strncpy(Restringtrunc, Restring, 5);						//truncating to 5 digits
@@ -101,11 +101,11 @@ while(1 && KeepLooping)
 			i++;
 		}
 			sscanf(alphastring, "%lf", &alphatest);
-		
+
 		if (((alpha - precision) < alphatest) && ((alpha+precision) > alphatest) && alphastring[strlen(alphastring)-1] == '0') //testing equality and last character is 0 to guarantee it is data
 		{
 			KeepLooping = 0;
-			
+
 			while (blanktest == ' ') //read CL
 			{
 				blanktest = line[i];
@@ -118,7 +118,7 @@ while(1 && KeepLooping)
 				i++;
 			}
 			sscanf(Clstring, "%lf", Clpointer);
-		
+
 			while (blanktest == ' ') //read Cd
 			{
 				blanktest = line[i];
@@ -131,7 +131,7 @@ while(1 && KeepLooping)
 				i++;
 			}
 			sscanf(Cdstring, "%lf", Cdpointer);
-			
+
 			while (blanktest == ' ') //read Cm
 			{
 				blanktest = line[i];
@@ -167,7 +167,7 @@ return;
 
 int main(int argc, char** argv) //argc is argument count, argv is an array of space delimited argument strings
 {
-	double alpha = 0; //Initial AoA
+	double alpha = 1.25; //Initial AoA  									CHAAANNNNNGE
 	double maxa = 0; //Stall maxa
 	double maxcl = 0; //Stall Coeff lift
 	// while(1) //Finds stall Cl
@@ -184,7 +184,7 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 			// break;
 		// }
 	// }
-	
+
 	// printf("Max Cl is %g at alpha %g.\n", maxcl, maxa);
 	// //double flap;
 	double maxdist = 61; //Runway length
@@ -194,8 +194,8 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 	double distn = 0; //Current distance
 	double tod = -1; //take off distance
 	double time = 0; //Time taken
-	alpha = 0; //Reset AoA to zero
-	double deflec = 0; //Flap deflection
+	//alpha = 0; //Reset AoA to zero
+	double deflec = 4.5; //Flap deflection                       				CHAAAAAANGE
 	double angv = 0; //Current angular velocity
 	double angv1 = ts; //New angular velocity
 	double Re = 0; //Reynolds number
@@ -211,71 +211,131 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 	double* Cldeflecpointer = &Cldeflec;
 	double* Cddeflecpointer = &Cddeflec;
 	double* Cmdeflecpointer = &Cmdeflec;
-	
+	double Cllow = 0;
+	double Cdlow = 0;
+	double Cmlow = 0;
+	double Clhigh = 0;
+	double Cdhigh = 0;
+	double Cmhigh = 0;
+	double Cldefleclow = 0;
+	double Cddefleclow = 0;
+	double Cmdefleclow = 0;
+	double Cldeflechigh = 0;
+	double Cddeflechigh = 0;
+	double Cmdeflechigh = 0;
+	double Cldefleclowangle = 0;
+	double Cddefleclowangle = 0;
+	double Cmdefleclowangle = 0;
+	double Cldeflechighangle = 0;
+	double Cddeflechighangle = 0;
+	double Cmdeflechighangle = 0;
+
 	// printf("At an aoa of %g and a Reynolds number of %g and %d degrees of deflection, the Cl is %lf, Cd is %lf, and Cm is %lf\n", alpha, Re, 0, Cl, Cd, Cm);
 	// printf("At an aoa of %g and a Reynolds number of %g and %g degrees of deflection, the Cl is %lf, Cd is %lf, and Cm is %lf\n", alpha, Re, deflec, Cldeflec, Cddeflec, Cmdeflec);
-	
+
 	while(1)
 	{
 		printf("Alpha: %g, Deflec: %g\n", alpha, deflec);
 		vn = vn1;
 		angv = angv1;
 		Re=vn1*C*RHO/MU;
-		updatecoefficients(Re, alpha, 0, Clpointer, Cdpointer, Cmpointer);
-		updatecoefficients(Re, alpha, deflec, Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
-		double fclift = .5*RHO*pow(vn, 2)*Cl*B*C; //Calculating lift, front wing
-		puts("1");
-		double fcdrag = .5*RHO*pow(vn, 2)*Cd*B*C;
-		puts("2");
-		double rclift = .125*RHO*pow(vn, 2)*Cldeflec*B*C + .375*RHO*pow(vn, 2)*Cl*B*C; //Back wing with aileron covering 1/4 of the span
-		puts("3");
-		double rcdrag = .125*RHO*pow(vn, 2)*Cddeflec*B*C + .375*RHO*pow(vn, 2)*Cd*B*C;
-		puts("4");
-		if((2*fclift + 2*rclift) > M*G) //See if it takes off
-		{
-			printf("Takeoff!\n");
-			break;
-		}
-		vn1 = ((linthrust(vn) - (2*fcdrag+2*rcdrag))/M)*ts + vn; //Numerical integral for speed
-		puts("5");
-		distn = distn + .5*ts*(vn1 + vn); //Numerical integral for distance
-		time += ts;
-		if(distn > maxdist) //If we exceed runway length, fail
-		{
-			printf("No takeoff.\n");
-			break;
-		}
-		deflec = pid(2, 1, 0, maxa, alpha, ts); //Put the current state into the PID controller and set the flap deflection
-		puts("6");
-		double fcmom = 2*C*C*B*Cm + 2*fclift*D*.5; //Moment at the front wing
-		double rcmom = 0.25*2*C*C*B*Cmdeflec + 0.75*2*C*C*B*Cm + -2*rclift*D*.5; //Moment at the rear wing
-		puts("7");
-		printf("front wing moment coefficient: %g\nrear wing moment coefficient: %g\n", Cm, 0.25*Cmdeflec+0.75*Cm);
-		printf("Front Moment: %g\nRear Moment: %g\n", fcmom, rcmom);
-		angv1 = (fcmom + rcmom)/((1/3)*(pow(Z,2)+pow((D+2*C),2)))*ts+angv; //Angular numerical velocity integral, Replace 1 with M
-		printf("angv: %g\nangv1 %g\n", angv, angv1);
-		alpha = (alpha + (180/M_PI)*0.5*ts*(angv + angv1)); //Numerical angular position integral
-		printf("%gs: Lift: %g Drag: %g Thrust: %g Speed: %g Distance: %g Alpha: %g Deflection:%g Moment: %g\n", time, (2*fclift + 2*rclift), (2*fcdrag + 2*rcdrag), linthrust(vn1), vn1, distn, alpha, deflec, (fcmom+rcmom));
+		
+		updatecoefficients(Re, floor(alpha), 0, Clpointer, Cdpointer, Cmpointer); //find lower bound on coefficients
+		Cllow = Cl;
+		Cdlow = Cd;
+		Cmlow = Cm;
+		updatecoefficients(Re, ceil(alpha), 0, Clpointer, Cdpointer, Cmpointer); //find upper bound on coefficients
+		Clhigh = Cl;
+		Cdhigh = Cd;
+		Cmhigh = Cm;
+		Cl = Cllow + (Clhigh-Cllow)*(alpha-floor(alpha));
+		Cd = Cdlow + (Cdhigh-Cdlow)*(alpha-floor(alpha));
+		Cm = Cmlow + (Cmhigh-Cmlow)*(alpha-floor(alpha));
+		
+		updatecoefficients(Re, floor(alpha), 5*floor(deflec/5), Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
+		Cldefleclow = Cldeflec;
+		Cddefleclow = Cddeflec;
+		Cmdefleclow = Cmdeflec;
+		updatecoefficients(Re, ceil(alpha),  5*floor(deflec/5), Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
+		Cldeflechigh = Cldeflec;
+		Cddeflechigh = Cddeflec;
+		Cmdeflechigh = Cmdeflec;
+		Cldefleclowangle = Cldefleclow + (Cldeflechigh-Cldefleclow)*(alpha-floor(alpha));
+		Cddefleclowangle = Cddefleclow + (Cddeflechigh-Cddefleclow)*(alpha-floor(alpha));
+		Cmdefleclowangle = Cmdefleclow + (Cmdeflechigh-Cmdefleclow)*(alpha-floor(alpha));
+		updatecoefficients(Re, floor(alpha), 5*ceil(deflec/5), Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
+		Cldefleclow = Cldeflec;
+		Cddefleclow = Cddeflec;
+		Cmdefleclow = Cmdeflec;
+		updatecoefficients(Re, ceil(alpha),  5*ceil(deflec/5), Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
+		Cldeflechigh = Cldeflec;
+		Cddeflechigh = Cddeflec;
+		Cmdeflechigh = Cmdeflec;
+		Cldeflechighangle = Cldefleclow + (Cldeflechigh-Cldefleclow)*(alpha-floor(alpha));
+		Cddeflechighangle = Cddefleclow + (Cddeflechigh-Cddefleclow)*(alpha-floor(alpha));
+		Cmdeflechighangle = Cmdefleclow + (Cmdeflechigh-Cmdefleclow)*(alpha-floor(alpha));
+		
+		Cldeflec = Cldefleclowangle + (Cldeflechighangle-Cldefleclowangle)*(deflec-5*floor(deflec/5))/5;
+		Cddeflec = Cddefleclowangle + (Cddeflechighangle-Cddefleclowangle)*(deflec-5*floor(deflec/5))/5;
+		Cmdeflec = Cmdefleclowangle + (Cmdeflechighangle-Cmdefleclowangle)*(deflec-5*floor(deflec/5))/5;
+		
+		
+		printf("At an aoa of %g and a Reynolds number of %g and %d degrees of deflection, the Cl is %lf, Cd is %lf, and Cm is %lf\n", alpha, Re, 0, Cl, Cd, Cm);
+		printf("At an aoa of %g and a Reynolds number of %g and %g degrees of deflection, the Cl is %lf, Cd is %lf, and Cm is %lf\n", alpha, Re, deflec, Cldeflec, Cddeflec, Cmdeflec);
+		// double fclift = .5*RHO*pow(vn, 2)*Cl*B*C; //Calculating lift, front wing
+		// puts("1");
+		// double fcdrag = .5*RHO*pow(vn, 2)*Cd*B*C;
+		// puts("2");
+		// double rclift = .125*RHO*pow(vn, 2)*Cldeflec*B*C + .375*RHO*pow(vn, 2)*Cl*B*C; //Back wing with aileron covering 1/4 of the span
+		// puts("3");
+		// double rcdrag = .125*RHO*pow(vn, 2)*Cddeflec*B*C + .375*RHO*pow(vn, 2)*Cd*B*C;
+		// puts("4");
+		// if((2*fclift + 2*rclift) > M*G) //See if it takes off
+		// {
+			// printf("Takeoff!\n");
+			// break;
+		// }
+		// vn1 = ((linthrust(vn) - (2*fcdrag+2*rcdrag))/M)*ts + vn; //Numerical integral for speed
+		// puts("5");
+		// distn = distn + .5*ts*(vn1 + vn); //Numerical integral for distance
+		// time += ts;
+		// if(distn > maxdist) //If we exceed runway length, fail
+		// {
+			// printf("No takeoff.\n");
+			// break;
+		// }
+		// deflec = pid(2, 1, 0, maxa, alpha, ts); //Put the current state into the PID controller and set the flap deflection
+		// puts("6");
+		// double fcmom = 2*C*C*B*Cm + 2*fclift*D*.5; //Moment at the front wing
+		// double rcmom = 0.25*2*C*C*B*Cmdeflec + 0.75*2*C*C*B*Cm + -2*rclift*D*.5; //Moment at the rear wing
+		// puts("7");
+		// printf("front wing moment coefficient: %g\nrear wing moment coefficient: %g\n", Cm, 0.25*Cmdeflec+0.75*Cm);
+		// printf("Front Moment: %g\nRear Moment: %g\n", fcmom, rcmom);
+		// angv1 = (fcmom + rcmom)/((1/3)*(pow(Z,2)+pow((D+2*C),2)))*ts+angv; //Angular numerical velocity integral, Replace 1 with M
+		// printf("angv: %g\nangv1 %g\n", angv, angv1);
+		// alpha = (alpha + (180/M_PI)*0.5*ts*(angv + angv1)); //Numerical angular position integral
+		// printf("%gs: Lift: %g Drag: %g Thrust: %g Speed: %g Distance: %g Alpha: %g Deflection:%g Moment: %g\n", time, (2*fclift + 2*rclift), (2*fcdrag + 2*rcdrag), linthrust(vn1), vn1, distn, alpha, deflec, (fcmom+rcmom));
+		break;
 	}
 	return 0;
 }
 
-double pid(double kp, double ki, double kd, double sp, double mv, double ts) //PID controller for the plane
-{
-	double err = sp - mv; //Error from set point and measured value
-	integ = integ + err*ts; //Integral (numerical)
-	double deriv = (err - preverr)/ts; //Derivative (numerical)
-	preverr = err; 
-	if((kp*err + ki*integ + kd*deriv) >= MAXF)
-	{
-		return MAXF; //Maximum deflection
-	}
-	else if((kp*err + ki*integ + kd*deriv) <=-MAXF)
-	{
-		return -MAXF;
-	}
-	else
-	{
-		return (kp*err + ki*integ + kd*deriv); //Return the PID
-	}
-}
+// double pid(double kp, double ki, double kd, double sp, double mv, double ts) //PID controller for the plane
+// {
+	// double err = sp - mv; //Error from set point and measured value
+	// integ = integ + err*ts; //Integral (numerical)
+	// double deriv = (err - preverr)/ts; //Derivative (numerical)
+	// preverr = err; 
+	// if((kp*err + ki*integ + kd*deriv) >= MAXF)
+	// {
+		// return MAXF; //Maximum deflection
+	// }
+	// else if((kp*err + ki*integ + kd*deriv) <=-MAXF)
+	// {
+		// return -MAXF;
+	// }
+	// else
+	// {
+		// return (kp*err + ki*integ + kd*deriv); //Return the PID
+	// }
+// }
