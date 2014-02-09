@@ -411,8 +411,8 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 		deflec = pid(.01, .01, 0, maxa, alpha, ts); //Put the current state into the PID controller and set the flap deflection
 		printf("new deflection is %lf, moving at a rate of %lf degrees per second\n", deflec, deflec/ts);
 		puts("6");
-		double fcmom = 2*C*C*B*Cm + 2*fclift*D*.5; //Moment at the front wing
-		double rcmom = 0.25*2*C*C*B*Cmdeflec + 0.75*2*C*C*B*Cm + -2*rclift*D*.5; //Moment at the rear wing
+		double fcmom = 2*C*C*B*Cm + 2*fclift*D*.505; //Moment at the front wing
+		double rcmom = 0.25*2*C*C*B*Cmdeflec + 0.75*2*C*C*B*Cm + -2*rclift*D*.495; //Moment at the rear wing
 		puts("7");
 		// printf("front wing moment coefficient: %g\nrear wing moment coefficient: %g\n", Cm, 0.25*Cmdeflec+0.75*Cm);
 		printf("Front Moment: %g\nRear Moment: %g\n", fcmom, rcmom);
