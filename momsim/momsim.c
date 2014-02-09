@@ -7,7 +7,7 @@ double t[11] = {20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0}; //1 ms steps.  Isn't thi
 double preverr = 0; //For the PID controller, previous error
 double integ = 0; //Current integral state for PID controller
 //UNIT SYSTEM IS KG M S
-#define C .1 //Chord
+#define C .2 //Chord
 #define RHO 1.225 //Air density
 #define B 1 //Span
 #define D .6 //Distance horizontally
@@ -269,7 +269,7 @@ return;
 
 int main(int argc, char** argv) //argc is argument count, argv is an array of space delimited argument strings
 {
-	double alpha = 1.25; //Initial AoA  									CHAAANNNNNGE
+	double alpha = 0; //Initial AoA  								
 	double maxa = 0; //Stall maxa
 	double maxcl = 0; //Stall Coeff lift
 	// while(1) //Finds stall Cl
@@ -297,7 +297,7 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 	double tod = -1; //take off distance
 	double time = 0; //Time taken
 	//alpha = 0; //Reset AoA to zero
-	double deflec = 4.5; //Flap deflection                       				CHAAAAAANGE
+	double deflec = 0; //Flap deflection                       				
 	double angv = 0; //Current angular velocity
 	double angv1 = ts; //New angular velocity
 	double Re = 0; //Reynolds number
@@ -416,11 +416,17 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 		puts("7");
 		// printf("front wing moment coefficient: %g\nrear wing moment coefficient: %g\n", Cm, 0.25*Cmdeflec+0.75*Cm);
 		printf("Front Moment: %g\nRear Moment: %g\n", fcmom, rcmom);
-		printf("%lf divided by %lf is %lf\n", (fcmom + rcmom)*ts, (M/3)*(pow(Z,2)+pow((D+2*C),2)), (fcmom + rcmom)/((M/3)*(pow(Z,2)+pow((D+2*C),2)))*ts);
+		//printf("%lf divided by %lf is %lf\n", (fcmom + rcmom)*ts, (M/3)*(pow(Z,2)+pow((D+2*C),2)), (fcmom + rcmom)/((M/3)*(pow(Z,2)+pow((D+2*C),2)))*ts);
 		angv1 = (fcmom + rcmom)/((M/3)*(pow(Z,2)+pow((D+2*C),2)))*ts+angv; //Angular numerical velocity integral
 		alpha = (alpha + (180/M_PI)*0.5*ts*(angv + angv1)); //Numerical angular position integral
-		printf("the angle of attack is %lf, with the plane rotating at %lf radians per second\n", alpha, angv1);
+		printf("the angle of attack is %lf, with the plane rotating at %lf degrees per second\n", alpha, angv1);
 		printf("%gs: Lift: %g Drag: %g Thrust: %g Speed: %g Distance: %g Alpha: %g Deflection:%g Moment: %g\n", time, (2*fclift + 2*rclift), (2*fcdrag + 2*rcdrag), linthrust(vn1), vn1, distn, alpha, deflec, (fcmom+rcmom));
+		if (alpha > 25 || alpha < 0)
+		{
+		printf("WHHYY IS THE PROGRAM STILL RUNNING???????\n");
+		perror("\n Angle of attack outside of bounds.\n");
+		exit(EXIT_FAILURE);
+		}
 	}
 	return 0;
 }
