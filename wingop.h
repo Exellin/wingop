@@ -42,4 +42,5 @@ double takeoffd(double a1, double a2, double c1, double c2, double b1, double b2
 double s1223cl(double a, double v, double l);
 double s1223cd(double a, double v, double l);
 double s1223cm(double a, double v, double l);
-char checkstab(double a1, double a2, double c1, double c2, double b1, double b2, double d, double z);
+char checkstab(double a1, double a2, double c1, double c2, double b1, double b2, double d, double z, double NP, double CG);
+double momsim(double a1, double a2, double c1, double c2, double b1, double b2, double d, double z, double m, double NP, double CG);

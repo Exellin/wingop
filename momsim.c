@@ -1,5 +1,8 @@
-#include "../wingop.h"
+#include "wingop.h"
 
+#define RHO 1.225 //Air density
+#define MU .00001796
+#define MASS 7.0 //Mass of aeroplane 
 #define MAXF 25
 
 double t[11] = {20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0}; //1 ms steps.  Isn't this 2?
@@ -7,13 +10,6 @@ double t[11] = {20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0}; //1 ms steps.  Isn't thi
 double preverr = 0; //For the PID controller, previous error
 double integ = 0; //Current integral state for PID controller
 //UNIT SYSTEM IS KG M S
-#define C .2 //Chord
-#define RHO 1.225 //Air density
-#define B 1 //Span
-#define D .6 //Distance horizontally
-#define Z .2 //Distance vertically 
-#define M 7.0 //Mass of aeroplane 
-#define MU .00001796
 
 void defleccoefficients(double Re, double alpha, double deflec, double* Cldeflecpointer, double* Cddeflecpointer, double* Cmdeflecpointer);
 double pid(double, double, double, double, double, double); //Forward declaration
@@ -165,6 +161,10 @@ if (Re < 5000)
 Re = 5000;
 }
 alpha = round(alpha);										//rounding to nearest integer
+if (alpha <0);
+{
+	alpha = 0; 												//temporary measure while I gather new data
+}
 deflec = floor(deflec/5)*deflec;							//rounding to nearest 5
 sprintf(deflecstring, "%d", (int) deflec);
 sprintf(Restring, "%lf", Re/1000000); 						//converting to string
@@ -267,11 +267,12 @@ fclose(filepointer);
 return;
 }
 
-int main(int argc, char** argv) //argc is argument count, argv is an array of space delimited argument strings
+double momsim(double a1, double a2, double c1, double c2, double b1, double b2, double D, double Z, double m, double NP, double CG)//argc is argument count, argv is an array of space delimited argument strings
 {
+	double M = MASS + m;
 	double alpha = 0; //Initial AoA  								
 	double maxa = 0; //Stall maxa
-	double maxcl = 0; //Stall Coeff lift
+	double olddeflec;
 	// while(1) //Finds stall Cl
 	// {
 		// printf("Alpha: %g Cl: %g\n", alpha, clarkl(alpha, 0));
@@ -301,12 +302,18 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 	double angv = 0; //Current angular velocity
 	double angv1 = ts; //New angular velocity
 	double Re = 0; //Reynolds number
-	double Cl = 0;
-	double Cd = 0;
-	double Cm = 0;
-	double* Clpointer = &Cl;
-	double* Cdpointer = &Cd;
-	double* Cmpointer = &Cm;
+	double Cl1 = 0;
+	double Cd1 = 0;
+	double Cm1 = 0;
+	double* Cl1pointer = &Cl1;
+	double* Cd1pointer = &Cd1;
+	double* Cm1pointer = &Cm1;
+	double Cl2 = 0;
+	double Cd2 = 0;
+	double Cm2 = 0;
+	double* Cl2pointer = &Cl2;
+	double* Cd2pointer = &Cd2;
+	double* Cm2pointer = &Cm2;
 	double Cldeflec = 0;
 	double Cddeflec = 0;
 	double Cmdeflec = 0;
@@ -340,57 +347,70 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 		printf("Alpha: %g, Deflec: %g\n", alpha, deflec);
 		vn = vn1;
 		angv = angv1;
-		Re=vn1*C*RHO/MU;
+		Re=vn1*c1*RHO/MU;
+		double ai1 = alpha + a1 - (Cl1/(M_PI*(b1/c1)))*(180/M_PI);
+		double ai2 = alpha + a2 - (Cl2/(M_PI*(b2/c2)))*(180/M_PI) - (Cl2/(2*M_PI*(b1/c1)) * ( ((1+(2*D/b1))/((pow(1+(2*D/b1),2)+pow((2*Z/b1),2)))) + ((1-(2*D/b1))/((pow(1-(2*D/b1),2)+pow((2*Z/b1),2)))) ) )*180/M_PI;
+		updatecoefficients(Re, floor(ai1), 0, Cl1pointer, Cd1pointer, Cm1pointer); //find lower bound on coefficients
+		Cllow = Cl1;
+		Cdlow = Cd1;
+		Cmlow = Cm1;
+		updatecoefficients(Re, ceil(ai1), 0, Cl1pointer, Cd1pointer, Cm1pointer); //find upper bound on coefficients
+		Clhigh = Cl1;
+		Cdhigh = Cd1;
+		Cmhigh = Cm1;
+		Cl1 = Cllow + (Clhigh-Cllow)*(ai1-floor(ai1));
+		Cd1 = Cdlow + (Cdhigh-Cdlow)*(ai1-floor(ai1));
+		Cm1 = Cmlow + (Cmhigh-Cmlow)*(ai1-floor(ai1));
 		
-		updatecoefficients(Re, floor(alpha), 0, Clpointer, Cdpointer, Cmpointer); //find lower bound on coefficients
-		Cllow = Cl;
-		Cdlow = Cd;
-		Cmlow = Cm;
-		updatecoefficients(Re, ceil(alpha), 0, Clpointer, Cdpointer, Cmpointer); //find upper bound on coefficients
-		Clhigh = Cl;
-		Cdhigh = Cd;
-		Cmhigh = Cm;
-		Cl = Cllow + (Clhigh-Cllow)*(alpha-floor(alpha));
-		Cd = Cdlow + (Cdhigh-Cdlow)*(alpha-floor(alpha));
-		Cm = Cmlow + (Cmhigh-Cmlow)*(alpha-floor(alpha));
+		updatecoefficients(Re, floor(ai2), 0, Cl2pointer, Cd2pointer, Cm2pointer); //find lower bound on coefficients
+		Cllow = Cl2;
+		Cdlow = Cd2;
+		Cmlow = Cm2;
+		updatecoefficients(Re, ceil(ai2), 0, Cl2pointer, Cd2pointer, Cm2pointer); //find upper bound on coefficients
+		Clhigh = Cl2;
+		Cdhigh = Cd2;
+		Cmhigh = Cm2;
+		Cl2 = Cllow + (Clhigh-Cllow)*(ai2-floor(ai2));
+		Cd2 = Cdlow + (Cdhigh-Cdlow)*(ai2-floor(ai2));
+		Cm2 = Cmlow + (Cmhigh-Cmlow)*(ai2-floor(ai2));
 		
-		updatecoefficients(Re, floor(alpha), 5*floor(deflec/5), Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
+		updatecoefficients(Re, floor(ai2), 5*floor(deflec/5), Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
 		Cldefleclow = Cldeflec;
 		Cddefleclow = Cddeflec;
 		Cmdefleclow = Cmdeflec;
-		updatecoefficients(Re, ceil(alpha),  5*floor(deflec/5), Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
+		updatecoefficients(Re, ceil(ai2),  5*floor(deflec/5), Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
 		Cldeflechigh = Cldeflec;
 		Cddeflechigh = Cddeflec;
 		Cmdeflechigh = Cmdeflec;
-		Cldefleclowangle = Cldefleclow + (Cldeflechigh-Cldefleclow)*(alpha-floor(alpha));
-		Cddefleclowangle = Cddefleclow + (Cddeflechigh-Cddefleclow)*(alpha-floor(alpha));
-		Cmdefleclowangle = Cmdefleclow + (Cmdeflechigh-Cmdefleclow)*(alpha-floor(alpha));
-		updatecoefficients(Re, floor(alpha), 5*ceil(deflec/5), Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
+		Cldefleclowangle = Cldefleclow + (Cldeflechigh-Cldefleclow)*(ai2-floor(ai2));
+		Cddefleclowangle = Cddefleclow + (Cddeflechigh-Cddefleclow)*(ai2-floor(ai2));
+		Cmdefleclowangle = Cmdefleclow + (Cmdeflechigh-Cmdefleclow)*(ai2-floor(ai2));
+		updatecoefficients(Re, floor(ai2), 5*ceil(deflec/5), Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
 		Cldefleclow = Cldeflec;
 		Cddefleclow = Cddeflec;
 		Cmdefleclow = Cmdeflec;
-		updatecoefficients(Re, ceil(alpha),  5*ceil(deflec/5), Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
+		updatecoefficients(Re, ceil(ai2),  5*ceil(deflec/5), Cldeflecpointer, Cddeflecpointer, Cmdeflecpointer);
 		Cldeflechigh = Cldeflec;
 		Cddeflechigh = Cddeflec;
 		Cmdeflechigh = Cmdeflec;
-		Cldeflechighangle = Cldefleclow + (Cldeflechigh-Cldefleclow)*(alpha-floor(alpha));
-		Cddeflechighangle = Cddefleclow + (Cddeflechigh-Cddefleclow)*(alpha-floor(alpha));
-		Cmdeflechighangle = Cmdefleclow + (Cmdeflechigh-Cmdefleclow)*(alpha-floor(alpha));
+		Cldeflechighangle = Cldefleclow + (Cldeflechigh-Cldefleclow)*(ai2-floor(ai2));
+		Cddeflechighangle = Cddefleclow + (Cddeflechigh-Cddefleclow)*(ai2-floor(ai2));
+		Cmdeflechighangle = Cmdefleclow + (Cmdeflechigh-Cmdefleclow)*(ai2-floor(ai2));
 		
 		Cldeflec = Cldefleclowangle + (Cldeflechighangle-Cldefleclowangle)*(deflec-5*floor(deflec/5))/5;
 		Cddeflec = Cddefleclowangle + (Cddeflechighangle-Cddefleclowangle)*(deflec-5*floor(deflec/5))/5;
 		Cmdeflec = Cmdefleclowangle + (Cmdeflechighangle-Cmdefleclowangle)*(deflec-5*floor(deflec/5))/5;
 		
 		
-		printf("At an aoa of %g and a Reynolds number of %g and %d degrees of deflection, the Cl is %lf, Cd is %lf, and Cm is %lf\n", alpha, Re, 0, Cl, Cd, Cm);
-		printf("At an aoa of %g and a Reynolds number of %g and %g degrees of deflection, the Cl is %lf, Cd is %lf, and Cm is %lf\n", alpha, Re, deflec, Cldeflec, Cddeflec, Cmdeflec);
-		double fclift = .5*RHO*pow(vn, 2)*Cl*B*C; //Calculating lift, front wing
+		printf("At an aoa of %g and a Reynolds number of %g and %d degrees of deflection, the Cl is %lf, Cd is %lf, and Cm is %lf\n", ai1, Re, 0, Cl1, Cd1, Cm1);
+		printf("At an aoa of %g and a Reynolds number of %g and %g degrees of deflection, the Cl is %lf, Cd is %lf, and Cm is %lf\n", ai2, Re, deflec, Cldeflec, Cddeflec, Cmdeflec);
+		double fclift = .5*RHO*pow(vn, 2)*Cl1*b1*c1; //Calculating lift, front wing
 		puts("1");
-		double fcdrag = .5*RHO*pow(vn, 2)*Cd*B*C;
+		double fcdrag = .5*RHO*pow(vn, 2)*Cd1*b1*c1;
 		puts("2");
-		double rclift = .125*RHO*pow(vn, 2)*Cldeflec*B*C + .375*RHO*pow(vn, 2)*Cl*B*C; //Back wing with aileron covering 1/4 of the span
+		double rclift = .125*RHO*pow(vn, 2)*Cldeflec*b2*c2 + .375*RHO*pow(vn, 2)*Cl2*b2*c2; //Back wing with aileron covering 1/4 of the span
 		puts("3");
-		double rcdrag = .125*RHO*pow(vn, 2)*Cddeflec*B*C + .375*RHO*pow(vn, 2)*Cd*B*C;
+		double rcdrag = .125*RHO*pow(vn, 2)*Cddeflec*b2*c2 + .375*RHO*pow(vn, 2)*Cd2*b2*c2;
 		puts("4");
 		if((2*fclift + 2*rclift) > M*G) //See if it takes off
 		{
@@ -408,27 +428,42 @@ int main(int argc, char** argv) //argc is argument count, argv is an array of sp
 		}
 		maxa = findmaxalpha(Re, alpha, 5);
 		printf("plane reaches stall at %lf\n", maxa);
-		deflec = pid(.01, .01, 0, maxa, alpha, ts); //Put the current state into the PID controller and set the flap deflection
-		printf("new deflection is %lf, moving at a rate of %lf degrees per second\n", deflec, deflec/ts);
+		olddeflec = deflec;
+		deflec = pid(.02, .01, 0, maxa, alpha, ts); //Put the current state into the PID controller and set the flap deflection
+		if (deflec > 25 ||deflec < -25)
+		{
+		printf("Deflec out of bounds\n");
+		// perror("\n Angle of attack outside of bounds.\n");
+		// exit(EXIT_FAILURE);
+		return 61;
+		}
+		
+		printf("new deflection is %lf, moving at a rate of %lf degrees per second\n", deflec, (deflec-olddeflec)/ts);
 		puts("6");
-		double fcmom = 2*C*C*B*Cm + 2*fclift*D*.505; //Moment at the front wing
-		double rcmom = 0.25*2*C*C*B*Cmdeflec + 0.75*2*C*C*B*Cm + -2*rclift*D*.495; //Moment at the rear wing
+		
+		double fcmom = 2*c1*c1*b1*Cm1 + 2*fclift*(D-NP-CG);
+		double rcmom = 0.75*2*c2*c2*b2*Cm2 + 0.25*2*c2*c2*b2*Cmdeflec -2*rclift*(NP+CG) + 2*c2*b2*Cd2*Z;
 		puts("7");
 		// printf("front wing moment coefficient: %g\nrear wing moment coefficient: %g\n", Cm, 0.25*Cmdeflec+0.75*Cm);
 		printf("Front Moment: %g\nRear Moment: %g\n", fcmom, rcmom);
 		//printf("%lf divided by %lf is %lf\n", (fcmom + rcmom)*ts, (M/3)*(pow(Z,2)+pow((D+2*C),2)), (fcmom + rcmom)/((M/3)*(pow(Z,2)+pow((D+2*C),2)))*ts);
-		angv1 = (fcmom + rcmom)/((M/3)*(pow(Z,2)+pow((D+2*C),2)))*ts+angv; //Angular numerical velocity integral
+		angv1 = (fcmom + rcmom)/((M/3)*(pow(Z,2)+pow((D+2*c1),2)))*ts+angv; //Angular numerical velocity integral
 		alpha = (alpha + (180/M_PI)*0.5*ts*(angv + angv1)); //Numerical angular position integral
 		printf("the angle of attack is %lf, with the plane rotating at %lf degrees per second\n", alpha, angv1);
 		printf("%gs: Lift: %g Drag: %g Thrust: %g Speed: %g Distance: %g Alpha: %g Deflection:%g Moment: %g\n", time, (2*fclift + 2*rclift), (2*fcdrag + 2*rcdrag), linthrust(vn1), vn1, distn, alpha, deflec, (fcmom+rcmom));
 		if (alpha > 25 || alpha < 0)
 		{
-		printf("WHHYY IS THE PROGRAM STILL RUNNING???????\n");
-		perror("\n Angle of attack outside of bounds.\n");
-		exit(EXIT_FAILURE);
+		printf("Alpha out of bounds\n");
+		// perror("\n Angle of attack outside of bounds.\n");
+		// exit(EXIT_FAILURE);
+		return 61;
 		}
 	}
-	return 0;
+	if (tod >= 61)
+	{
+	return tod;
+	}
+	return tod;
 }
 
 double pid(double kp, double ki, double kd, double sp, double mv, double ts) //PID controller for the plane
